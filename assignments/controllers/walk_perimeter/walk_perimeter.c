@@ -7,6 +7,8 @@
 
 #define MAX_SPEED 9.28
 
+#define SENSORS 3
+
 // entry point of the controller
 int main(int argc, char **argv) {
   // initialize the Webots API
@@ -14,13 +16,13 @@ int main(int argc, char **argv) {
 
   // internal variables
   int i;
-  WbDeviceTag ps[3];
-  char ps_names[3][4] = {
+  WbDeviceTag ps[SENSORS];
+  char ps_names[SENSORS][4] = {
     "ps5", "ps6", "ps7"
   };
 
   // initialize devices
-  for (i = 0; i < 3 ; i++) {
+  for (i = 0; i < SENSORS ; i++) {
     ps[i] = wb_robot_get_device(ps_names[i]);
     wb_distance_sensor_enable(ps[i], TIME_STEP);
   }
@@ -35,19 +37,17 @@ int main(int argc, char **argv) {
   // feedback loop: step simulation until an exit event is received
   while (wb_robot_step(TIME_STEP) != -1) {
     // read sensors outputs
-    double ps_values[3];
-    for (i = 0; i < 3 ; i++)
+    double ps_values[SENSORS];
+    for (i = 0; i < SENSORS ; i++)
       ps_values[i] = wb_distance_sensor_get_value(ps[i]);
 
     // detect obstacles
     bool left_obstacle =
-//      ps_values[0] > 80.0 ||
       ps_values[1] > 80.0 ||
       ps_values[2] > 80.0;
     bool right_obstacle =
-      ps_values[0] < 65.0 ; // ||
-//      ps_values[1] > 70.0 ||
-//      ps_values[2] > 70.0;
+      ps_values[0] < 60.0 ||
+      ps_values[1] < 55.0 ;
 
     // initialize motor speeds at 50% of MAX_SPEED.
     double left_speed  = 0.5 * MAX_SPEED;
@@ -61,8 +61,8 @@ int main(int argc, char **argv) {
     }
     else if (right_obstacle) {
       // turn left
-      left_speed  = -0.5 * MAX_SPEED;
-      right_speed = 0.5 * MAX_SPEED;
+      left_speed  = -0.25 * MAX_SPEED;
+      right_speed = 0.25 * MAX_SPEED;
     }
 
     // write actuators inputs
