@@ -1,10 +1,16 @@
-#VRML_SIM R2022a utf8
+#VRML_SIM R2022b utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/robots/gctronic/e-puck/protos/E-puck.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/floors/protos/Floor.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+
 WorldInfo {
   basicTimeStep 16
 }
 Viewpoint {
-  orientation -0.26661790475662434 -0.09060992986044988 0.9595336020556402 3.7720506434112053
-  position 1.5841843723763027 1.2791048567068903 1.0801952049989312
+  orientation -0.7601688365616618 -3.519966977286924e-05 0.6497255872146893 3.141757416275022
+  position -0.3097229097294316 0.10931509737925572 2.276411695704566
 }
 TexturedBackground {
 }
@@ -12,6 +18,7 @@ TexturedBackgroundLight {
 }
 Floor {
   size 1 1
+  tileSize 1 1
 }
 DEF WALL_1 Solid {
   translation 0.5 0 0.05
@@ -57,7 +64,27 @@ DEF WALL_4 Solid {
   boundingObject USE WALL_SHAPE
 }
 E-puck {
-  translation -0.398735 0.398624 1.88738e-14
+  translation -0.398735 0.398624 0
   rotation 0 1 0 0
   controller "walk_perimeter"
+  groundSensorsSlot [
+    Pen {
+      translation -0.055 0 0.095
+      rotation 0 1 0 0.2618
+      children [
+        DEF PEN_SHAPE Shape {
+          appearance PBRAppearance {
+            baseColor 0.333333 0 0.498039
+            metalness 0
+          }
+          geometry Cylinder {
+            height 0.1
+            radius 0.005
+          }
+        }
+      ]
+      inkColor 0.333333 0 0.498039
+      leadSize 0.01
+    }
+  ]
 }
