@@ -1,11 +1,12 @@
 #include <webots/robot.h>
 #include <webots/distance_sensor.h>
 #include <webots/motor.h>
+#include <webots/camera.h>
 
-// time in [ms] of a simulation step
 #define TIME_STEP 64
 
-#define MAX_SPEED 9.28
+#define MAX_SPEED 1.57
+#define TURN_SPEED 6.28
 
 #define SENSORS 3
 
@@ -34,6 +35,9 @@ int main(int argc, char **argv) {
   wb_motor_set_velocity(left_motor, 0.0);
   wb_motor_set_velocity(right_motor, 0.0);
 
+  WbDeviceTag camera = wb_robot_get_device("camera");
+  wb_camera_enable(camera, TIME_STEP);
+
   // feedback loop: step simulation until an exit event is received
   while (wb_robot_step(TIME_STEP) != -1) {
     // read sensors outputs
@@ -41,34 +45,32 @@ int main(int argc, char **argv) {
     for (i = 0; i < SENSORS ; i++)
       ps_values[i] = wb_distance_sensor_get_value(ps[i]);
 
-    // detect obstacles
-    bool left_obstacle =
-      ps_values[1] > 80.0 ||
+    bool turn_right =
+      ps_values[1] > 86.0 ||
       ps_values[2] > 80.0;
-    bool right_obstacle =
-      ps_values[0] < 60.0 ||
-      ps_values[1] < 55.0 ;
+    bool turn_left =
+      ps_values[0] < 56.0 ||
+      ps_values[1] < 54.0 ||
+      ps_values[2] < 54.0 ;
 
-    // initialize motor speeds at 50% of MAX_SPEED.
-    double left_speed  = 0.5 * MAX_SPEED;
-    double right_speed = 0.5 * MAX_SPEED;
+    double left_speed  = MAX_SPEED;
+    double right_speed = MAX_SPEED;
 
-    // modify speeds according to obstacles
-    if (left_obstacle) {
-      // turn right
-      left_speed  = 0.5 * MAX_SPEED;
-      right_speed = -0.5 * MAX_SPEED;
+    if (turn_right) {
+      left_speed  = 0.25 * TURN_SPEED;
+      right_speed = -0.125 * TURN_SPEED;
     }
-    else if (right_obstacle) {
-      // turn left
-      left_speed  = -0.25 * MAX_SPEED;
-      right_speed = 0.25 * MAX_SPEED;
+    else if (turn_left) {
+      left_speed  = -0.125 * TURN_SPEED;
+      right_speed = 0.25 * TURN_SPEED;
     }
 
     // write actuators inputs
     wb_motor_set_velocity(left_motor, left_speed);
     wb_motor_set_velocity(right_motor, right_speed);
   }
+
+  wb_camera_disable(camera);
 
   // cleanup the Webots API
   wb_robot_cleanup();
