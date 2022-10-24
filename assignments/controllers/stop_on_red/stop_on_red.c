@@ -1,0 +1,96 @@
+#include <stdio.h>
+
+#include <webots/robot.h>
+#include <webots/distance_sensor.h>
+#include <webots/motor.h>
+#include <webots/camera.h>
+
+#define TIME_STEP 64
+
+#define MAX_SPEED 6.28
+#define TURN_SPEED 6.28
+
+#define SENSORS 3
+
+// entry point of the controller
+int main(int argc, char **argv) {
+  // initialize the Webots API
+  wb_robot_init();
+
+  // internal variables
+  int i;
+  WbDeviceTag ps[SENSORS];
+  char ps_names[SENSORS][4] = {
+    "ps5", "ps6", "ps7"
+  };
+
+  // initialize devices
+  for (i = 0; i < SENSORS ; i++) {
+    ps[i] = wb_robot_get_device(ps_names[i]);
+    wb_distance_sensor_enable(ps[i], TIME_STEP);
+  }
+
+  WbDeviceTag left_motor = wb_robot_get_device("left wheel motor");
+  WbDeviceTag right_motor = wb_robot_get_device("right wheel motor");
+  wb_motor_set_position(left_motor, INFINITY);
+  wb_motor_set_position(right_motor, INFINITY);
+  wb_motor_set_velocity(left_motor, 0.0);
+  wb_motor_set_velocity(right_motor, 0.0);
+
+  WbDeviceTag camera = wb_robot_get_device("camera");
+  wb_camera_enable(camera, TIME_STEP);
+  int image_width = wb_camera_get_width(camera);
+  int image_height = wb_camera_get_height(camera);
+
+  // feedback loop: step simulation until an exit event is received
+  while (wb_robot_step(TIME_STEP) != -1) {
+  
+    const unsigned char *image = wb_camera_get_image(camera);
+    for (int x = 0; x < image_width; x++) {
+      for (int y = 0; y < image_height; y++) {
+        int r = wb_camera_image_get_red(image, image_width, x, y);
+        if(r==225) {
+          wb_motor_set_velocity(left_motor, 0);
+          wb_motor_set_velocity(right_motor, 0);
+          goto end;
+        }
+      }
+    }
+
+    // read sensors outputs
+    double ps_values[SENSORS];
+    for (i = 0; i < SENSORS ; i++)
+      ps_values[i] = wb_distance_sensor_get_value(ps[i]);
+
+    bool turn_right =
+      ps_values[1] > 86.0 ||
+      ps_values[2] > 80.0;
+    bool turn_left =
+      ps_values[0] < 56.0 ||
+      ps_values[1] < 54.0 ||
+      ps_values[2] < 54.0 ;
+
+    double left_speed  = MAX_SPEED;
+    double right_speed = MAX_SPEED;
+
+    if (turn_right) {
+      left_speed  = 0.25 * TURN_SPEED;
+      right_speed = -0.125 * TURN_SPEED;
+    }
+    else if (turn_left) {
+      left_speed  = -0.125 * TURN_SPEED;
+      right_speed = 0.25 * TURN_SPEED;
+    }
+
+    // write actuators inputs
+    wb_motor_set_velocity(left_motor, left_speed);
+    wb_motor_set_velocity(right_motor, right_speed);
+  }
+  
+  end:
+  wb_camera_disable(camera);
+
+  // cleanup the Webots API
+  wb_robot_cleanup();
+  return 0; //EXIT_SUCCESS
+}
