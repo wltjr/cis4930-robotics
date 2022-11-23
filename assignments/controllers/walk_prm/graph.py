@@ -62,24 +62,31 @@ class Graph:
         """
         self.vertices.append(vertex)
 
-    def get_neighbors(self, vertex, number, distance):
+    def get_neighbors(self, vertex, number):
         """
         Find and return all neighbors of a vertex within the Euclidean distance
 
-        :param vertex         a vertex to get its neighbors
+        :param vertex       a vertex to get its neighbors
         :param number       the number of neighbors to find/get
-        :param distance     the Euclidean distance between neighbors
 
         :return integer     the distance between the two vertices
         """
 
+        neighbor_dists = []
+
+        for v in self.vertices:
+            if v != vertex:
+                neighbor_dists.append([v,math.dist(vertex.coords, v.coords)])
+
+        neighbor_dists.sort(key=lambda item:item[1])
+
         neighbors = []
 
-        while len(neighbors) < number:
-            for neighbor in self.vertices:
-                if neighbor != vertex and math.dist(vertex.coords, neighbor.coords) <= distance:
-                    neighbors.append(neighbor)
- 
+        for neighbor,dist in neighbor_dists:
+            neighbors.append(neighbor)
+            if len(neighbors) >= number:
+                break
+
         return neighbors
 
 
