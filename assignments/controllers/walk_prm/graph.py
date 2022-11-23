@@ -106,6 +106,7 @@ class Graph:
 
         for vertex in self.vertices:
             dist[vertex] = 1000000
+            vertex.parent = None
         dist[start] = 0
 
         while not dist == False:
