@@ -131,3 +131,13 @@ class Graph:
         path_stack.append(start)
 
         return path_stack
+
+    def remove_edge(self, vertexA, vertexB):
+        """
+        Remove an edge between two vertices
+
+        :param vertexA        a vertex to remove an edge
+        :param vertexB        the other vertex to remove an edge
+        """
+        vertexA.edges.remove(vertexB)
+        vertexB.edges.remove(vertexA)
