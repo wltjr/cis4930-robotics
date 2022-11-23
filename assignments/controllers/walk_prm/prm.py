@@ -39,9 +39,8 @@ def create_2d_world():
 
 def PRM(world):
 
-    VERTICES = 60           # Number of vertices
+    VERTICES = 1000          # Number of vertices
     NEIGHBORS = 5           # Number of neighbors per vertex
-    MAX_DISTANCE = 100      # Maximum distance for a neighbor
 
     # create graph, start and goal vertices
     roadmap = Graph()
@@ -69,7 +68,7 @@ def PRM(world):
     print("\nCreating graph vertices and edges:")
     for vertex in roadmap.vertices:
         print(".", end="")
-        neighbors = roadmap.get_neighbors(vertex, NEIGHBORS, MAX_DISTANCE)
+        neighbors = roadmap.get_neighbors(vertex, NEIGHBORS)
         for neighbor in neighbors:
             if roadmap.has_edge(vertex, neighbor) == False:
                 roadmap.add_edge(vertex, neighbor)
