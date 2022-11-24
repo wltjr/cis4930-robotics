@@ -3,8 +3,8 @@ from graph import Graph, Vertex
 import random
 from PIL import Image, ImageDraw
 
-PATH_FILE = "prm_path.txt"
 GRAPH_FILE = "prm_graph.jpg"
+PATH_FILE_PATTERN = "prm_path_%d.%s"
 
 # bounds for the world/map
 x_lower = 0
@@ -17,78 +17,100 @@ width = x_upper - x_lower
 height = y_upper - y_lower
 
 # color constants for PIL
-white = (255, 255, 255)
+gray = (100, 100, 100)
 black = (0, 0, 0)
-blue = (0, 0, 255)
 red = (255, 0, 0)
 green = (0,128,0)
 purple = (153, 119, 187)
 
 # start and goal 2d locations
-start = (x_lower+20, y_lower+20)
-goal = (x_upper-20, y_upper-20)
+start_goals = [
+        [(x_lower+20, y_lower+20), (x_upper-20, y_upper-20)],
+        [(x_upper-20, y_lower+20), (x_lower+20, y_upper-20)],
+        [(x_upper/2, y_lower+20), (x_upper/2, y_upper-20)]
+    ]
 
 # create empty PIL image to draw on in memory, image saved at end
 image = Image.new("RGB", (width, height), black)
 draw = ImageDraw.Draw(image)
 
-def create_2d_world():
-    world = [ [0] * x_upper for _ in range(y_upper)]
-    world[goal[0]][goal[1]] = 2
-    return world
+class Roadmap:
 
-def PRM(world):
+    def __init__(self, vertices, neighbors):
+        """
+        :param vertices         the number of vertices
+        :param neighbors        the number of neighbors per vertex
+        """
+        self.vertices = vertices
+        self.neighbors = neighbors
+        self.roadmap = Graph()
 
-    VERTICES = 1000          # Number of vertices
-    NEIGHBORS = 5           # Number of neighbors per vertex
+    def add_start_goal(self, start, goal):
+        self.start_vertex = Vertex(start)
+        self.goal_vertex = Vertex(goal)
 
-    # create graph, start and goal vertices
-    roadmap = Graph()
-    start_vertex = Vertex(start)
-    goal_vertex = Vertex(goal)
+        # add start and goal vertices to the graph
+        self.add_vertex(self.start_vertex, red)
+        self.add_vertex(self.goal_vertex, green)
 
-    # add start and goal vertices to the graph
-    roadmap.add_vertex(start_vertex)
-    roadmap.add_vertex(goal_vertex)
+        self.add_edges([self.start_vertex,self.goal_vertex])
 
-    # draw start and goal vertices
-    draw.point([start, goal], red)
+    def add_vertex(self, vertex, color):
+        self.roadmap.add_vertex(vertex)
+        draw.point(vertex.coords, color)
 
-    # add N vertices to the world/map 
-    while len(roadmap.vertices) != VERTICES:
+    def add_edges(self, vertices):
+        print("Creating graph vertices and edges: ", end="")
+        for vertex in vertices:
+            print(".", end="")
+            neighbors = self.roadmap.get_neighbors(vertex, self.neighbors)
+            for neighbor in neighbors:
+                if self.roadmap.has_edge(vertex, neighbor) == False:
+                    self.roadmap.add_edge(vertex, neighbor)
+                    draw.line([vertex.coords, neighbor.coords], gray)   
 
-        # generate random points for vertices
-        x = random.randint(x_lower + 1, x_upper - 1)
-        y = random.randint(y_lower + 1, y_upper - 1)
+    def create_map(self):
+        # add N vertices to the world/map 
+        while len(self.roadmap.vertices) != self.vertices:
 
-        if world[x][y] != -1 and [x,y] not in roadmap.vertices:
-            roadmap.add_vertex(Vertex((x,y)))
-            draw.point([x,y], green)
+            # generate random points for vertices
+            x = random.randint(x_lower + 1, x_upper - 1)
+            y = random.randint(y_lower + 1, y_upper - 1)
 
-    print("\nCreating graph vertices and edges:")
-    for vertex in roadmap.vertices:
-        print(".", end="")
-        neighbors = roadmap.get_neighbors(vertex, NEIGHBORS)
-        for neighbor in neighbors:
-            if roadmap.has_edge(vertex, neighbor) == False:
-                roadmap.add_edge(vertex, neighbor)
-                draw.line([vertex.coords, neighbor.coords], white)   
+            if [x,y] not in roadmap.roadmap.vertices:
+                self.add_vertex(Vertex((x,y)), green)
+        
+        self.add_edges(self.roadmap.vertices)
 
-    print("\n\nFinding shortest path from start to goal....")
-    return roadmap.dijkstra(start_vertex, goal_vertex)
-
-path = PRM(create_2d_world())
-prev = None
-
-with open(PATH_FILE, 'w') as file:
-    while path:
-        vertex = path.pop()
-        if prev != None:
-            draw.line([prev, vertex.coords], purple, 2)
-        file.write('%d,%d\n' % (vertex.coords))
-        prev = vertex.coords
-
+roadmap = Roadmap(1000, 5)
+roadmap.create_map()
 image.save(GRAPH_FILE)
+print("\nGraph image written to: %s" % GRAPH_FILE)
+i = 1
 
-print("\nPath written to: %s" % PATH_FILE)
-print("Graph image written to: %s" % GRAPH_FILE)
+graph = image.copy()
+
+for i, (start, goal) in enumerate(start_goals):
+    print("\nFinding shortest path from start %s to goal %s" % (start, goal))
+    roadmap.add_start_goal(start, goal)
+    path = roadmap.roadmap.dijkstra(roadmap.start_vertex, roadmap.goal_vertex)
+    prev = None
+
+    text_file = PATH_FILE_PATTERN % (i+1, "txt")
+    image_file = PATH_FILE_PATTERN % (i+1, "jpg")
+
+    with open(text_file, 'w') as file:
+        while path:
+            vertex = path.pop()
+            if prev != None:
+                draw.line([prev, vertex.coords], purple, 2)
+            file.write('%d,%d\n' % (vertex.coords))
+            prev = vertex.coords
+
+    image.save(image_file)
+
+    print("Path written to: %s" % text_file)
+    print("Graph path image written to: %s" % image_file)
+
+    image = graph.copy()
+    draw = ImageDraw.Draw(image)
