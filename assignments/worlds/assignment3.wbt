@@ -1,0 +1,103 @@
+#VRML_SIM R2022b utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/robots/gctronic/e-puck/protos/E-puck.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/floors/protos/Floor.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+
+WorldInfo {
+  basicTimeStep 8
+}
+Viewpoint {
+  orientation -0.4758886716479219 0.4725298464001229 0.7417853574035096 1.8720851501775042
+  position -0.04385306571247982 -2.9298129083026074 6.242516503405492
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+Floor {
+  size 37.5 37.5
+  tileSize 37.5 37.5
+  appearance Appearance {
+    texture ImageTexture {
+      url [
+        "../controllers/walk_prm/prm_graph.jpg"
+      ]
+    }
+  }
+}
+DEF WALL_1 Solid {
+  translation 18.75 0 0.05
+  children [
+    DEF WALL_SHAPE Shape {
+      appearance PBRAppearance {
+        baseColor 0.333333 0 0.498039
+        roughness 0.5
+        metalness 0
+      }
+      geometry Box {
+        size 0.02 37.5 0.1
+      }
+    }
+  ]
+  name "solid(1)"
+  boundingObject USE WALL_SHAPE
+  rotationStep 0
+}
+DEF WALL_2 Solid {
+  translation -18.75 0 0.05
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(2)"
+  boundingObject USE WALL_SHAPE
+}
+DEF WALL_3 Solid {
+  translation 0 -18.75 0.05
+  rotation 0 0 1 1.5708
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(3)"
+  boundingObject USE WALL_SHAPE
+}
+DEF WALL_4 Solid {
+  translation 0 18.75 0.05
+  rotation 0 0 1 1.5708
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(4)"
+  boundingObject USE WALL_SHAPE
+}
+E-puck {
+  rotation 0 1 0 0
+  controller "walk_prm"
+  turretSlot [
+    Compass {
+    }
+    GPS {
+    }
+  ]
+  groundSensorsSlot [
+    Pen {
+      translation -0.055 0 0.095
+      rotation 0 1 0 0.2618
+      children [
+        DEF PEN_SHAPE Shape {
+          appearance PBRAppearance {
+            baseColor 0.333333 0 0.498039
+            metalness 0
+          }
+          geometry Cylinder {
+            height 0.1
+            radius 0.005
+          }
+        }
+      ]
+      inkColor 0.333333 0 0.498039
+      leadSize 0.01
+    }
+  ]
+}
