@@ -136,13 +136,14 @@ int main(int argc, char **argv) {
   wb_motor_set_velocity(right_motor, 0.0);
 
   WbDeviceTag pen = wb_robot_get_device("pen");
-  wb_pen_write(pen,false);
   
   // prime compass and gps, min 2 steps
   wb_robot_step(TIME_STEP);
   wb_robot_step(TIME_STEP);
 
     for(int f = 0; f < 3 ; f++) {
+      // turn off pen between paths  
+      wb_pen_write(pen,false);
       for(int d = 0; d < MAX_POINTS && destinations[f][d] != -1; d+=2) {
       
         dest[0] = convertCoord(destinations[f][d]); // x
@@ -164,15 +165,17 @@ int main(int argc, char **argv) {
             printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f° <----- turn\n", 
                     coords[0], coords[1], bearing, heading, theta);
 
-            if (0 > theta) { // left +y
+            double duration = (double)abs(heading) / 245;
+            if (dest[0] < coords[0]) { // left +y
               wb_motor_set_velocity(left_motor, MAX_SPEED);
               wb_motor_set_velocity(right_motor, -MAX_SPEED);
-            } else if (0 < theta) { // right -y
+            } else if (dest[0] > coords[0]) { // right -y
+              heading = theta;
+              duration = (double)abs(theta) / 235;
               wb_motor_set_velocity(left_motor, -MAX_SPEED);
               wb_motor_set_velocity(right_motor, MAX_SPEED);
             }
 
-            double duration = (double)abs(heading) / 250;
             double start_time = wb_robot_get_time() + duration;
             do {
               coords = wb_gps_get_values(gps);
