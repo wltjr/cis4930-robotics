@@ -46,17 +46,6 @@ double getRobotBearing()
     return bearing;
 }
 
-double cartesianCalcThetaDot(double heading, double destinationTheta) {
-    double theta_dot =  destinationTheta - heading;
-/*
-    if (theta_dot > 180)
-        theta_dot = -(360-theta_dot);
-    else if (theta_dot < -180)
-        theta_dot = (360+theta_dot);
-*/
-    return theta_dot;
-}
-
 double convertCoord(int coord) {
     double c = (coord - HALF_IMAGE) * SCALE; // % * area / 2
     return c;
@@ -77,6 +66,31 @@ double getTheta(double dest[], const double coords[]) {
 
 bool checkDestination(double dest[], const double coords[]) {
   double error = 0.02;
+  bool x =  false;
+  bool y =  false;
+
+  if((dest[0] - error) < coords[0] && coords[0] < (dest[0] + error)) {
+    x =  true;
+    printf("x in range %f < %f < %f ", (dest[0] - error), coords[0] ,(dest[0] + error));
+  }
+
+  if((dest[1] - error) < coords[1] && coords[1] < (dest[1] + error)) {
+    y =  true;
+    printf("y in range %f < %f < %f ", (dest[1] - error), coords[1] ,(dest[1] + error));
+  }
+
+  if (y && !x)
+    printf("x NOT range %f < %f < %f ", (dest[0] - error), coords[0] ,(dest[0] + error));
+
+  if (x && !y)
+    printf("y NOT range %f < %f < %f ", (dest[1] - error), coords[1] ,(dest[1] + error));
+
+  if(x && y)
+    printf("STOP!!!!!!!!!!!!!!!!!!!!!!!");
+
+  if(x || y)
+    printf("\n");
+
   return ((dest[0] - error) < coords[0] && coords[0] < (dest[0] + error)  &&  
           (dest[1] - error) < coords[1] && coords[1] < (dest[1] + error));
 }
@@ -160,18 +174,20 @@ int main(int argc, char **argv) {
           bearing = getRobotBearing();
 
           if(turn) {
-            heading = cartesianCalcThetaDot(heading, theta);
+            heading = theta - heading;
 
             printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f° <----- turn\n", 
                     coords[0], coords[1], bearing, heading, theta);
 
             double duration = (double)abs(heading) / 245;
             if (dest[0] < coords[0]) { // left +y
+              printf("Left <----- turn\n");
               wb_motor_set_velocity(left_motor, MAX_SPEED);
               wb_motor_set_velocity(right_motor, -MAX_SPEED);
             } else if (dest[0] > coords[0]) { // right -y
               heading = theta;
               duration = (double)abs(theta) / 235;
+              printf("Right <----- turn\n");
               wb_motor_set_velocity(left_motor, -MAX_SPEED);
               wb_motor_set_velocity(right_motor, MAX_SPEED);
             }
@@ -181,22 +197,19 @@ int main(int argc, char **argv) {
               coords = wb_gps_get_values(gps);
               theta = getTheta(dest, coords);
 
-              // heading = cartesianCalcThetaDot(heading, theta);
               wb_robot_step(TIME_STEP);
               // printf("gps coords x: %f y: %f compass: %f° heading: %f° θ: %f time %f°\n", 
               //         coords[0], coords[1], bearing, heading, theta, wb_robot_get_time());
             }
             while (wb_robot_get_time() < start_time);
-
-            // heading = cartesianCalcThetaDot(heading, theta);
             printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f°\n", 
                     coords[0], coords[1], bearing, heading, theta);
             wb_motor_set_velocity(left_motor, MAX_SPEED);
             wb_motor_set_velocity(right_motor, MAX_SPEED);
             turn = false;
           }
-          printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f°\n", 
-                  coords[0], coords[1], bearing, heading, theta);
+          // printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f°\n", 
+          //         coords[0], coords[1], bearing, heading, theta);
 
           if(checkDestination(dest,coords)) {
             turn = true;
