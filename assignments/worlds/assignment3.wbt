@@ -9,8 +9,8 @@ WorldInfo {
   basicTimeStep 8
 }
 Viewpoint {
-  orientation -0.4758886716479219 0.4725298464001229 0.7417853574035096 1.8720851501775042
-  position -0.04385306571247982 -2.9298129083026074 6.242516503405492
+  orientation -0.5801386932267089 0.5810800499806896 0.5707758510445635 2.103025247735079
+  position -8.62923627457968 12.915265249773258 25.79716201191276
 }
 TexturedBackground {
 }
@@ -72,6 +72,7 @@ DEF WALL_4 Solid {
   boundingObject USE WALL_SHAPE
 }
 E-puck {
+  translation -17.25 17.25 0
   rotation 0 1 0 0
   controller "walk_prm"
   turretSlot [
