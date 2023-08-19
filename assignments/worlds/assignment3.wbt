@@ -1,4 +1,4 @@
-#VRML_SIM R2022b utf8
+#VRML_SIM R2023b utf8
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/robots/gctronic/e-puck/protos/E-puck.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/floors/protos/Floor.proto"
@@ -6,19 +6,18 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/project
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
 
 WorldInfo {
-  basicTimeStep 8
 }
 Viewpoint {
-  orientation -0.5801386932267089 0.5810800499806896 0.5707758510445635 2.103025247735079
-  position -8.62923627457968 12.915265249773258 25.79716201191276
+  orientation 0.5662766795145598 -0.5661022376067636 -0.5990483943844437 4.2206196207288125
+  position -0.11280975840845753 -0.914518791005626 11.586431115804622
 }
 TexturedBackground {
 }
 TexturedBackgroundLight {
 }
 Floor {
-  size 37.5 37.5
-  tileSize 37.5 37.5
+  size 7.5 7.5
+  tileSize 7.5 7.5
   appearance Appearance {
     texture ImageTexture {
       url [
@@ -28,7 +27,7 @@ Floor {
   }
 }
 DEF WALL_1 Solid {
-  translation 18.75 0 0.05
+  translation 3.75 0 0.05
   children [
     DEF WALL_SHAPE Shape {
       appearance PBRAppearance {
@@ -37,7 +36,7 @@ DEF WALL_1 Solid {
         metalness 0
       }
       geometry Box {
-        size 0.02 37.5 0.1
+        size 0.02 7.5 0.1
       }
     }
   ]
@@ -46,7 +45,7 @@ DEF WALL_1 Solid {
   rotationStep 0
 }
 DEF WALL_2 Solid {
-  translation -18.75 0 0.05
+  translation -3.75 0 0.05
   children [
     USE WALL_SHAPE
   ]
@@ -54,7 +53,7 @@ DEF WALL_2 Solid {
   boundingObject USE WALL_SHAPE
 }
 DEF WALL_3 Solid {
-  translation 0 -18.75 0.05
+  translation 0 -3.75 0.05
   rotation 0 0 1 1.5708
   children [
     USE WALL_SHAPE
@@ -63,7 +62,7 @@ DEF WALL_3 Solid {
   boundingObject USE WALL_SHAPE
 }
 DEF WALL_4 Solid {
-  translation 0 18.75 0.05
+  translation 0 3.75 0.05
   rotation 0 0 1 1.5708
   children [
     USE WALL_SHAPE
@@ -72,8 +71,10 @@ DEF WALL_4 Solid {
   boundingObject USE WALL_SHAPE
 }
 E-puck {
-  translation -17.25 17.25 0
-  rotation 0 1 0 0
+  hidden position_0_0 1.4893687953898148e-08
+  hidden position_0_1 1.4894013031827946e-08
+  translation -3.67676 3.67676 0
+  rotation 0.9999999999999999 0 0 5.986980518644247e-05
   controller "walk_prm"
   turretSlot [
     Compass {
@@ -98,7 +99,8 @@ E-puck {
         }
       ]
       inkColor 0.333333 0 0.498039
-      leadSize 0.01
+      leadSize 0.02
+      write FALSE
     }
   ]
 }
