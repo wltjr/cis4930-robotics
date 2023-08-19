@@ -8,9 +8,9 @@ PATH_FILE_PATTERN = "prm_path_%d.%s"
 
 # bounds for the world/map
 x_lower = 0
-x_upper = 500
+x_upper = 1024
 y_lower = 0
-y_upper = 500
+y_upper = 1024
 
 # dimensions of world/map
 width = x_upper - x_lower
@@ -82,7 +82,7 @@ class Roadmap:
         
         self.add_edges(self.roadmap.vertices)
 
-roadmap = Roadmap(1000, 5)
+roadmap = Roadmap(100, 5)
 roadmap.create_map()
 image.save(GRAPH_FILE)
 print("\nGraph image written to: %s" % GRAPH_FILE)
