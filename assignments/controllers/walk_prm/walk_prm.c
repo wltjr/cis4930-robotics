@@ -12,21 +12,22 @@
 #include <webots/pen.h>
 #include <webots/robot.h>
 
-#define TIME_STEP 8
+#define TIME_STEP 32
 
 #define MAX_SPEED 6.28
+#define TURN_SPEED (MAX_SPEED / 100)
 
-#define IMAGE 500
-#define FLOOR 37.5
-#define UNIT (IMAGE/FLOOR)
+#define IMAGE 1024
+#define FLOOR 7.5
+#define UNIT (IMAGE / FLOOR)
 
 #define PATHS 3
 #define MAX_POINTS 100  // 50 x 2 fixed size for array allocation
 #define LINE_LEN 32
 
-const double HALF_IMAGE = IMAGE/2;
-const double RANGE = FLOOR/2;
-const double SCALE = FLOOR/IMAGE;
+const double HALF_IMAGE = IMAGE / 2;
+const double RANGE = FLOOR / 2;
+const double SCALE = FLOOR / IMAGE;
 
 WbDeviceTag compass;
 WbDeviceTag gps;
@@ -37,7 +38,7 @@ double getRobotBearing()
 {
     /* calculate bearing angle in degrees */
     const double *north = wb_compass_get_values(compass);
-    double rad = atan2(north[0], north[2]);
+    double rad = atan2(north[0], north[1]);
     double bearing = (rad - 1.5708) / M_PI * 180.0;
 //    printf("compass x: %f y: %f bearing: %f\n", north[0], north[2], bearing);
     if (bearing < 0.0)
@@ -52,8 +53,14 @@ double convertCoord(int coord) {
 }
 
 double getTheta(double dest[], const double coords[]) {
-  double theta = atan2(dest[1] - coords[1],
-                       dest[0] - coords[0]) * 180 / M_PI;
+
+  // printf("atan2((%f - %f) / (%f - %f) * 180 / %f)\n",
+         // dest[1], coords[1], dest[0], coords[0], M_PI);
+
+  double theta = atan2(dest[1] - coords[1], dest[0] - coords[0]) * 180 / M_PI;
+  // double theta = (atan2(dest[0] - coords[0], dest[1] - coords[1])
+                 // + atan2(dest[1] - coords[1], dest[0] - coords[0]))
+                 // * 90 / M_PI;
   // double theta2 = acos((dest[0]*coords[0]+dest[1]*coords[1]) /
   //                        (sqrt(pow(dest[0],2)+pow(dest[1],2)) *
   //                         sqrt(pow(coords[0],2)+pow(coords[1],2)))) /
@@ -104,6 +111,8 @@ int main(int argc, char **argv) {
   double dest[2] = {0};
   double bearing = 0;
   double heading = 0;
+  double theta = 0;
+  double write = false;
 
   FILE *fp = NULL;
   const char* FILES[PATHS] = {"prm_path_1.txt", "prm_path_2.txt", "prm_path_3.txt"};
@@ -154,19 +163,30 @@ int main(int argc, char **argv) {
   // prime compass and gps, min 2 steps
   wb_robot_step(TIME_STEP);
   wb_robot_step(TIME_STEP);
-
+  
     for(int f = 0; f < 3 ; f++) {
-      // turn off pen between paths  
-      wb_pen_write(pen,false);
+
+      coords = wb_gps_get_values(gps);
+      bearing = getRobotBearing();
+      heading = bearing;
+      printf("gps x: %f y: %f z: %f compass: %f° heading: %f° <----- initial\n", 
+              coords[0], coords[1], coords[2], bearing, heading);
+ 
+      // turn off pen between paths
+      write = false;
+      wb_pen_write(pen, write);
+
       for(int d = 0; d < MAX_POINTS && destinations[f][d] != -1; d+=2) {
-      
+
         dest[0] = convertCoord(destinations[f][d]); // x
         dest[1] = -convertCoord(destinations[f][d+1]); // y
         printf("next x: %d y: %d dest_x: %f dest_y: %f\n",
               destinations[f][d], destinations[f][d+1], dest[0], dest[1]);
 
         coords = wb_gps_get_values(gps);
-        double theta = getTheta(dest, coords);
+        double theta0 = getTheta(dest, coords);
+        double theta1 = theta0 - theta;
+        theta = theta0;
 
         // feedback loop: step simulation until an exit event is received
         while (wb_robot_step(TIME_STEP) != -1) {
@@ -174,36 +194,33 @@ int main(int argc, char **argv) {
           bearing = getRobotBearing();
 
           if(turn) {
-            heading = theta - heading;
 
-            printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f° <----- turn\n", 
-                    coords[0], coords[1], bearing, heading, theta);
+            heading += theta1;
+            
+            printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f° θ0: %f° θ1: %f° <----- turn", 
+                    coords[0], coords[1], bearing, heading, theta, theta0, theta1);
 
-            double duration = (double)abs(heading) / 245;
-            if (dest[0] < coords[0]) { // left +y
-              printf("Left <----- turn\n");
-              wb_motor_set_velocity(left_motor, MAX_SPEED);
-              wb_motor_set_velocity(right_motor, -MAX_SPEED);
-            } else if (dest[0] > coords[0]) { // right -y
-              heading = theta;
-              duration = (double)abs(theta) / 235;
-              printf("Right <----- turn\n");
-              wb_motor_set_velocity(left_motor, -MAX_SPEED);
-              wb_motor_set_velocity(right_motor, MAX_SPEED);
+            if (theta1 > 0) { // left +x
+              printf(" Left\n");
+              wb_motor_set_velocity(left_motor, -TURN_SPEED);
+              wb_motor_set_velocity(right_motor, TURN_SPEED);
+            } else { // right -x
+              printf(" Right\n");
+              wb_motor_set_velocity(left_motor, TURN_SPEED);
+              wb_motor_set_velocity(right_motor, -TURN_SPEED);
             }
 
-            double start_time = wb_robot_get_time() + duration;
-            do {
-              coords = wb_gps_get_values(gps);
-              theta = getTheta(dest, coords);
-
+            wb_pen_write(pen, false);
+            while ((trunc(bearing * 10.0) / 10.0 ) != (trunc(heading * 10.0) / 10.0 )) {  
+              // (truncf(bearing * 10.0) / 10.0 )
+              bearing = getRobotBearing();
+              // printf("compass: %f° heading: %f° \n", (trunc(bearing * 10.0) / 10.0 ) , (trunc(heading * 10.0) / 10.0 ));
               wb_robot_step(TIME_STEP);
-              // printf("gps coords x: %f y: %f compass: %f° heading: %f° θ: %f time %f°\n", 
-              //         coords[0], coords[1], bearing, heading, theta, wb_robot_get_time());
             }
-            while (wb_robot_get_time() < start_time);
-            printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f°\n", 
-                    coords[0], coords[1], bearing, heading, theta);
+            wb_pen_write(pen, write);
+
+            printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f° θ0: %f° θ1: %f°\n", 
+                    coords[0], coords[1], bearing, heading, theta, theta0, theta1);
             wb_motor_set_velocity(left_motor, MAX_SPEED);
             wb_motor_set_velocity(right_motor, MAX_SPEED);
             turn = false;
@@ -212,8 +229,8 @@ int main(int argc, char **argv) {
           //         coords[0], coords[1], bearing, heading, theta);
 
           if(checkDestination(dest,coords)) {
-            turn = true;
-            wb_pen_write(pen, turn);
+            write = turn = true;
+            wb_pen_write(pen, write);
             wb_motor_set_velocity(left_motor, 0);
             wb_motor_set_velocity(right_motor, 0);
             printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f° <----- destination\n", 
