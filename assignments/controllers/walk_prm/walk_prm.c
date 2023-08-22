@@ -40,7 +40,6 @@ double getRobotBearing()
     const double *north = wb_compass_get_values(compass);
     double rad = atan2(north[0], north[1]);
     double bearing = (rad - 1.5708) / M_PI * 180.0;
-//    printf("compass x: %f y: %f bearing: %f\n", north[0], north[2], bearing);
     if (bearing < 0.0)
         bearing = bearing + 360.0;
 
@@ -53,21 +52,8 @@ double convertCoord(int coord) {
 }
 
 double getTheta(double dest[], const double coords[]) {
-
-  // printf("atan2((%f - %f) / (%f - %f) * 180 / %f)\n",
-         // dest[1], coords[1], dest[0], coords[0], M_PI);
-
   double theta = atan2(dest[1] - coords[1], dest[0] - coords[0]) * 180 / M_PI;
-  // double theta = (atan2(dest[0] - coords[0], dest[1] - coords[1])
-                 // + atan2(dest[1] - coords[1], dest[0] - coords[0]))
-                 // * 90 / M_PI;
-  // double theta2 = acos((dest[0]*coords[0]+dest[1]*coords[1]) /
-  //                        (sqrt(pow(dest[0],2)+pow(dest[1],2)) *
-  //                         sqrt(pow(coords[0],2)+pow(coords[1],2)))) /
-  //                       M_PI * 180.0;
-  // printf("theta: %f° theta2: %f°\n", theta, theta2);
-//  if (theta < 0)
-//    theta += 360.0;
+
   return theta;
 }
 
@@ -75,28 +61,6 @@ bool checkDestination(double dest[], const double coords[]) {
   double error = 0.02;
   bool x =  false;
   bool y =  false;
-
-  if((dest[0] - error) < coords[0] && coords[0] < (dest[0] + error)) {
-    x =  true;
-    printf("x in range %f < %f < %f ", (dest[0] - error), coords[0] ,(dest[0] + error));
-  }
-
-  if((dest[1] - error) < coords[1] && coords[1] < (dest[1] + error)) {
-    y =  true;
-    printf("y in range %f < %f < %f ", (dest[1] - error), coords[1] ,(dest[1] + error));
-  }
-
-  if (y && !x)
-    printf("x NOT range %f < %f < %f ", (dest[0] - error), coords[0] ,(dest[0] + error));
-
-  if (x && !y)
-    printf("y NOT range %f < %f < %f ", (dest[1] - error), coords[1] ,(dest[1] + error));
-
-  if(x && y)
-    printf("STOP!!!!!!!!!!!!!!!!!!!!!!!");
-
-  if(x || y)
-    printf("\n");
 
   return ((dest[0] - error) < coords[0] && coords[0] < (dest[0] + error)  &&  
           (dest[1] - error) < coords[1] && coords[1] < (dest[1] + error));
@@ -205,27 +169,26 @@ int main(int argc, char **argv) {
             printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f° θ0: %f° θ1: %f° <----- turn", 
                     coords[0], coords[1], bearing, heading, theta, theta0, theta1);
 
-            if (theta1 > 0) { // left +x
+            if (theta1 > 0) { // left
               printf(" Left\n");
               wb_motor_set_velocity(left_motor, -TURN_SPEED);
               wb_motor_set_velocity(right_motor, TURN_SPEED);
-            } else { // right -x
+            } else { // right
               printf(" Right\n");
               wb_motor_set_velocity(left_motor, TURN_SPEED);
               wb_motor_set_velocity(right_motor, -TURN_SPEED);
             }
 
             wb_pen_write(pen, false);
-            while ((trunc(bearing * 10.0) / 10.0 ) != (trunc(heading * 10.0) / 10.0 )) {  
-              // (truncf(bearing * 10.0) / 10.0 )
+            while ((trunc(bearing * 10.0) / 10.0 ) != (trunc(heading * 10.0) / 10.0 )) {
               bearing = getRobotBearing();
               // printf("compass: %f° heading: %f° \n", (trunc(bearing * 10.0) / 10.0 ) , (trunc(heading * 10.0) / 10.0 ));
               wb_robot_step(TIME_STEP);
             }
             wb_pen_write(pen, write);
 
-            printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f° θ0: %f° θ1: %f°\n", 
-                    coords[0], coords[1], bearing, heading, theta, theta0, theta1);
+            // printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f° θ0: %f° θ1: %f°\n", 
+                    // coords[0], coords[1], bearing, heading, theta, theta0, theta1);
             wb_motor_set_velocity(left_motor, MAX_SPEED);
             wb_motor_set_velocity(right_motor, MAX_SPEED);
             turn = false;
