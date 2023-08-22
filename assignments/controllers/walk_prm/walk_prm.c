@@ -196,7 +196,12 @@ int main(int argc, char **argv) {
           if(turn) {
 
             heading += theta1;
-            
+            if(heading > 360)
+            {
+              heading -= 360;
+              theta -= 360;
+            }
+
             printf("gps x: %f y: %f compass: %f° heading: %f° θ: %f° θ0: %f° θ1: %f° <----- turn", 
                     coords[0], coords[1], bearing, heading, theta, theta0, theta1);
 
